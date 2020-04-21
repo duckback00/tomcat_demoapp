@@ -208,7 +208,7 @@ sqlQuoted = "\"";
    } else {
       vhgt="50";
    }
-   String ban = "<center><table border=0 style=\"background-color:teal;width:100%;\">\n";
+   String ban = "<center><table border=0 style=\"background-color:black;width:100%;\">\n";
    ban = ban + "<tr><td style=\"padding-left:100px;\" width=\"40%\" align=\"center\" valign=\"top\"><a href=\"redirect.jsp?sessionid="+sessionid+"&logout=yes\"><image src=\"img/delphix-logo-white.png\" border=0 /></a></td>\n";
    ban = ban + "<td align=\"center\" width=\"140\" valign=\"middle\"><image src=\"img/"+dbType+"_logo.png\" height=\""+vhgt+"\" border=0 /></td>\n";
    ban = ban + "<td align=\"left\" valign=\"center\"><span style=\"padding-left:10px;font-size:14pt;\"><font color=\"#1AD6F5\">Delphix Demo Application </font><font color=white>[ "+envtype+" : "+dbname+" ]</font></span></td>\n";
