@@ -1,0 +1,144 @@
+{
+  "patient_id": 1,
+  "phone_number": "803-345-6789",
+  "medical_record_number": "4483838",
+  "email": "raygun@aol.com",
+  "address": "40 Presidential Dr",
+  "patient": {
+    "firstname": "Ronald",
+    "lastname": "Reagan",
+    "social_security_number": "474-78-1234",
+    "address": "40 Presidential Dr",
+    "city": "Simi Valley",
+    "zipcode": "93065-0987",
+    "dob": "",
+    "phone_number": "803-345-6789",
+    "email": "raygun@aol.com"
+  },
+  "patient_details": {
+    "phone_number": "803-345-6789",
+    "medical_record_number": "4483838",
+    "account_number": "83-12345",
+    "cc_number": "4283897623459088"
+  }
+}
+{
+  "patient_id": 2,
+  "phone_number": "415-345-6789",
+  "medical_record_number": "5483838",
+  "email": "bush@aol.com",
+  "address": "2943 SMU Blvd",
+  "patient": {
+    "firstname": "George",
+    "lastname": "Bush",
+    "social_security_number": "111-67-4321",
+    "address": "2943 SMU Blvd",
+    "city": "Dallas",
+    "zipcode": "75205-7367",
+    "dob": "",
+    "phone_number": "415-345-6789",
+    "email": "bush@aol.com"
+  },       
+  "patient_details": {
+    "phone_number": "415-345-6789",
+    "medical_record_number": "5483838",
+    "account_number": "54-83838",
+    "cc_number": "5683897623459088"
+  }
+}
+{
+  "patient_id": 3,
+  "phone_number": "650-456-0987",
+  "medical_record_number": "6483838",
+  "email": "obama@aol.com",
+  "address": "1600 Pennsylvania Ave",
+  "patient": {
+    "firstname": "Barack",
+    "lastname": "Obama",
+    "social_security_number": "650-12-5432",
+    "address": "1600 Pennsylvania Ave",
+    "city": "Washington DC",
+    "zipcode": "20500-6353",
+    "dob": "",
+    "phone_number": "650-456-0987",
+    "email": "obama@aol.com"
+  },
+  "patient_details": {
+    "phone_number": "650-456-0987",
+    "medical_record_number": "6483838",
+    "account_number": "64-67890",
+    "cc_number": "3783897623459088"
+  }
+}
+{
+  "patient_id": 4,
+  "phone_number": "123-321-9990",
+  "medical_record_number": "7483838",
+  "email": "abe@hotmail.com",
+  "address": "112 N 6th St",
+  "patient": {
+    "firstname": "Abraham",
+    "lastname": "Lincoln",
+    "social_security_number": "673-11-3479",
+    "address": "112 N 6th St",
+    "city": "Springfield",
+    "zipcode": "62701-6363",
+    "dob": "",
+    "phone_number": "123-321-9990",
+    "email": "abe@hotmail.com"
+  },
+  "patient_details": {
+    "phone_number": "123-321-9990",
+    "medical_record_number": "7483838",
+    "account_number": "23-97483",
+    "cc_number": "4283897623459088"
+  }
+}
+{
+  "patient_id": 5,
+  "phone_number": "440-345-2345",
+  "medical_record_number": "8483838",
+  "email": "Jeff@whitehouse.gov",
+  "address": "7415 Arlington Blvd",
+  "patient": {
+    "firstname": "Thomas",
+    "lastname": "Jefferson",
+    "social_security_number": "123-68-8765",
+    "address": "7415 Arlington Blvd",
+    "city": "Falls Church",
+    "zipcode": "22042-4242",
+    "dob": "",
+    "phone_number": "440-345-2345",
+    "email": "Jeff@whitehouse.gov"
+  },
+  "patient_details": {
+    "phone_number": "440-345-2345",
+    "medical_record_number": "8483838",
+    "account_number": "44-45678",
+    "cc_number": "4283865623437584"
+  }
+}
+{
+  "patient_id": 6,
+  "phone_number": "810-867-5309",
+  "medical_record_number": "9483838",
+  "email": "Jenny@number.com",
+  "address": "867 Five Three O Nine",
+  "patient": {
+    "firstname": "Tommy",
+    "lastname": "TwoTone",
+    "social_security_number": "123-45-6789",
+    "address": "867 Five Three O Nine",
+    "city": "Rock Falls",
+    "zipcode": "45042-5422",
+    "dob": "",
+    "phone_number": "810-867-5309",
+    "email": "Jenny@number.com"
+  },
+  "patient_details": {
+    "phone_number": "810-867-5309",
+    "medical_record_number": "9483838",
+    "account_number": "44-2837",
+    "cc_number": "4923759623490407"
+  }
+}

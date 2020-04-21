@@ -1,0 +1,28 @@
+Feb 09, 2020 12:43:46 AM org.apache.catalina.core.StandardServer await
+INFO: A valid shutdown command was received via the shutdown port. Stopping the Server instance.
+Feb 09, 2020 12:43:46 AM org.apache.coyote.AbstractProtocol pause
+INFO: Pausing ProtocolHandler ["http-bio-8081"]
+Feb 09, 2020 12:43:46 AM org.apache.coyote.AbstractProtocol pause
+INFO: Pausing ProtocolHandler ["http-bio-8444"]
+Feb 09, 2020 12:43:46 AM org.apache.coyote.AbstractProtocol pause
+INFO: Pausing ProtocolHandler ["ajp-bio-8010"]
+Feb 09, 2020 12:43:46 AM org.apache.catalina.core.StandardService stopInternal
+INFO: Stopping service Catalina
+Feb 09, 2020 12:43:46 AM org.apache.catalina.loader.WebappClassLoader clearReferencesThreads
+SEVERE: The web application [/demoapp] appears to have started a thread named [Timer-0] but has failed to stop it. This is very likely to create a memory leak.
+Feb 09, 2020 12:43:46 AM org.apache.catalina.loader.WebappClassLoader clearReferencesThreads
+SEVERE: The web application [/demoapp] appears to have started a thread named [oracle.jdbc.driver.BlockSource.ThreadedCachingBlockSource.BlockReleaser] but has failed to stop it. This is very likely to create a memory leak.
+Feb 09, 2020 12:43:46 AM org.apache.catalina.loader.WebappClassLoader clearReferencesThreads
+SEVERE: The web application [/demoapp] appears to have started a thread named [InterruptTimer] but has failed to stop it. This is very likely to create a memory leak.
+Feb 09, 2020 12:43:46 AM org.apache.coyote.AbstractProtocol stop
+INFO: Stopping ProtocolHandler ["http-bio-8081"]
+Feb 09, 2020 12:43:46 AM org.apache.coyote.AbstractProtocol stop
+INFO: Stopping ProtocolHandler ["ajp-bio-8010"]
+Feb 09, 2020 12:43:47 AM org.apache.coyote.AbstractProtocol destroy
+INFO: Destroying ProtocolHandler ["http-bio-8081"]
+Feb 09, 2020 12:43:47 AM org.apache.coyote.AbstractProtocol stop
+INFO: Stopping ProtocolHandler ["http-bio-8444"]
+Feb 09, 2020 12:43:47 AM org.apache.coyote.AbstractProtocol destroy
+INFO: Destroying ProtocolHandler ["http-bio-8444"]
+Feb 09, 2020 12:43:47 AM org.apache.coyote.AbstractProtocol destroy
+INFO: Destroying ProtocolHandler ["ajp-bio-8010"]

@@ -1,0 +1,78 @@
+{
+  "employee_id": 1
+, "first_name": "Woody"
+, "last_name": "Evans"
+, "dept_name": "Pre-Sales"
+, "city": "Hoboken"
+} 
+{
+  "employee_id": 2
+, "first_name": "Jeff"
+, "last_name": "Zeisler"
+, "dept_name": "Field Services"
+, "city": "Menlo Park"
+} 
+{
+  "employee_id": 3
+, "first_name": "Dr. Jeff"
+, "last_name": "Wootton"
+, "dept_name": "Lyrical Rap Studios"
+, "city": "Reston"
+} 
+{
+  "employee_id": 4
+, "first_name": "Mark"
+, "last_name": "Vincker"
+, "dept_name": "Sales"
+, "city": "Birmingham"
+} 
+{
+  "employee_id": 5
+, "first_name": "Luther"
+, "last_name": "Vandross"
+, "dept_name": "Superstar"
+, "city": "NYC"
+}
+{
+  "employee_id": 6
+, "first_name": "Darth"
+, "last_name": "Vader"
+, "dept_name": "Imperial Army"
+, "city": "Death Star"
+}
+{
+  "employee_id": 7
+, "first_name": "Fred"
+, "last_name": "Flintsone"
+, "dept_name": "Rock Quary"
+, "city": "Bedrock"
+}
+{
+  "employee_id": 8
+, "first_name": "Marcia"
+, "last_name": "Brady"
+, "dept_name": "Family"
+, "city": "Los Angeles"
+}
+{
+  "employee_id": 9
+, "first_name": "Wile E"
+, "last_name": "Coyote"
+, "dept_name": "Looney Tunes"
+, "city": "Desert"
+}
+{
+  "employee_id": 10
+, "first_name": "Road"
+, "last_name": "Runner"
+, "dept_name": "Looney Tunes"
+, "city": "Desert"
+}
+{
+  "employee_id": 11
+, "first_name": "Gizmo"
+, "last_name": "Unknown"
+, "dept_name": "Space Traveler"
+, "city": "Mars"
+}
+

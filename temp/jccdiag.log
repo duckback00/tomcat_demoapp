@@ -1,0 +1,6 @@
+2018-04-06 06:11:59.45
+License check was performed against server 10.0.1.40, calling the V9+ license procedure failed: ErrorCode=-805 SQLState=51002
+Server version: SQL10051
+Driver version: 4.18.60
+
+

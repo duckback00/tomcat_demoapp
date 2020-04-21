@@ -1,0 +1,1 @@
+{"engines":[{"protocol":"http","hostname":"10.0.1.10","password":"delphix","enginename":"Virtualization","enginetype":"Virtualization","username":"delphix_admin"},{"protocol":"http","hostname":"10.0.1.15\/masking\/","password":"Delphix_123","enginename":"Masking","enginetype":"Masking","username":"delphix_admin"}]}

@@ -1,0 +1,93 @@
+{ 
+  "schema": "DELPHIXDB" 
+, "host": "10.0.1.30" 
+, "port": "1521" 
+, "sid": "vora1" 
+, "databaseName": "null" 
+, "instanceName": "null" 
+, "jdbc": "null" 
+, "databaseType": "ORACLE" 
+, "profileSet": "HIPAA" 
+, "tables": [
+ {
+  "tableName": "EMPLOYEES"
+  , "tableId": "16"
+  , "results": 
+{
+  "_pageInfo": {
+    "numberOnPage": 5,
+    "total": 5
+  },
+  "responseList": [
+    {
+      "columnMetadataId": 102,
+      "columnName": "DEPT_NAME",
+      "tableMetadataId": 16,
+      "dataType": "VARCHAR2",
+      "columnLength": 50,
+      "isMasked": false,
+      "isProfilerWritable": true,
+      "isPrimaryKey": false,
+      "isIndex": false,
+      "isForeignKey": false
+    },
+    {
+      "columnMetadataId": 103,
+      "columnName": "EMPLOYEE_ID",
+      "tableMetadataId": 16,
+      "dataType": "NUMBER",
+      "columnLength": 22,
+      "isMasked": false,
+      "isProfilerWritable": true,
+      "isPrimaryKey": true,
+      "isIndex": true,
+      "isForeignKey": false
+    },
+    {
+      "columnMetadataId": 104,
+      "columnName": "CITY",
+      "tableMetadataId": 16,
+      "algorithmName": "NullValueLookup",
+      "domainName": "CITY",
+      "dataType": "VARCHAR2",
+      "columnLength": 50,
+      "isMasked": true,
+      "isProfilerWritable": true,
+      "isPrimaryKey": false,
+      "isIndex": false,
+      "isForeignKey": false
+    },
+    {
+      "columnMetadataId": 105,
+      "columnName": "LAST_NAME",
+      "tableMetadataId": 16,
+      "algorithmName": "LastNameLookup",
+      "domainName": "LAST_NAME",
+      "dataType": "VARCHAR2",
+      "columnLength": 50,
+      "isMasked": true,
+      "isProfilerWritable": true,
+      "isPrimaryKey": false,
+      "isIndex": false,
+      "isForeignKey": false
+    },
+    {
+      "columnMetadataId": 106,
+      "columnName": "FIRST_NAME",
+      "tableMetadataId": 16,
+      "algorithmName": "FirstNameLookup",
+      "domainName": "FIRST_NAME",
+      "dataType": "VARCHAR2",
+      "columnLength": 50,
+      "isMasked": true,
+      "isProfilerWritable": true,
+      "isPrimaryKey": false,
+      "isIndex": false,
+      "isForeignKey": false
+    }
+  ]
+}
+ }
+]
+, "rows": 1 
+}

@@ -1,0 +1,591 @@
+#!/bin/bash
+#
+## Subroutines ...
+
+#           0                1               2            3         4         5
+# ./api/masking_tc.sh [platform.json] [platform_name] [action] [conn.json] [tables]
+# ./api/masking_tc.sh "jsonfiles/delphix_platforms.json" "Mac2" "Profile" "jsonfiles/e1852edc-9cf0-4ad6-9a41-250fb6435b9f.json" "EMPLOYEES" 
+
+#set -x 
+
+##############################################################
+## Parameter Initialization ...
+
+#
+# Delphix Engine Configuration Parameters ...
+# 
+################ DMIP="${1}" 	#"172.16.160.195"             # include port if required, "172.16.160.195:80" or :443
+CONFIG_FILE="${1}"  		#delphix_platforms.json"
+CONFIG="${2}"
+PARAMS=`cat "${CONFIG_FILE}" | jq ".engines[] | select (.enginename == \"${CONFIG}\") "`
+PROTO=`echo "${PARAMS}" | jq --raw-output ".protocol"`
+DMIP=`echo "${PARAMS}" | jq --raw-output ".hostname"`
+DMUSER=`echo "${PARAMS}" | jq --raw-output ".username"`
+DMPASS=`echo "${PARAMS}" | jq --raw-output ".password"`
+
+#
+# Check for last character, :8282/dmsuite/
+#
+LAST="${DMIP:${#DMIP}-1:1}"
+LEN2=7
+if [[ "${LAST}" == '/' ]]
+then
+   LEN2=8  
+fi
+LEN=${#DMIP}
+DMIP2=${DMIP::$LEN-$LEN2}
+
+#
+# Build Masking API URL ...
+#
+DMURL="${PROTO}://${DMIP2}masking/api"
+COOKIE="~/cookies.txt"            # or use /tmp/cookies.txt
+COOKIE=`eval echo $COOKIE`
+CONTENT_TYPE="Content-Type: application/json"
+HEADER_ACCEPT="Accept: application/json"
+DELAYTIMESEC=10
+DT=`date '+%Y%m%d%H%M%S'`
+
+##############################################################
+## Remaining Command Line Parameters ...
+
+#
+# Action  Profile ProfileMask 
+#
+ACTION="${3}"
+if [[ "${ACTION}" == "" ]]
+then
+   echo "Error: Mising ACTION ${ACTION}, Exiting ...";
+   exit 1;
+fi
+
+#
+# Connection JSON String ...
+#
+### CONN="[ { \"username\": \"DELPHIXDB\", \"password\": \"delphixdb\", \"databaseType\": \"ORACLE\", \"host\": \"172.16.160.133\", \"port\": 1521, \"schemaName\": \"DELPHIXDB\", \"profileSetName\": \"Financial\", \"connNo\": 1, \"sid\": \"orcl\" } ] "
+
+CONN=`cat ${4}`
+if [[ "${CONN}" == "" ]]
+then
+   echo "Error: Mising Connection ${CONN}, Exiting ...";
+   exit 1;
+fi
+
+#
+# Tables ...
+#
+### TBL="EMPLOYEES"
+### TBL="MEDICAL_RECORDS,PATIENT,PATIENT_DETAILS"
+
+TBL="${5}"
+if [[ "${TBL}" == "" ]]
+then
+   echo "Error: Mising Tables ${TBL}, Exiting ...";
+   exit 1;
+fi
+
+#echo $ACTION
+#echo $CONN
+#echo $TBL
+#exit;
+
+#
+# Masking Variables ...
+#
+APP="my_app"                            # Will use if exists, create if not exists
+ENV="my_env"                            # Will use if exists, create if not exists
+                                        # NOTE: if exists, all connections and rule sets will be deleted!!!
+
+CONNNAME="MyConn"                       # Connector Basename
+RSNAME="MyRuleSet"                      # Rule Set Basename
+
+#
+# Default Profile Set if not provided in the connection information ...
+#
+PSNAME="Financial"      # PSNAME="HIPAA"
+
+#
+# Report Variables / Filenames ...
+#
+RPT_DIR=""     		                        # Path for HTML Output ...
+JSON_OUT="${RPT_DIR}json.out"                   # each db json results output file ...
+RPT="profile_report"                            # Report Name ...
+REPORT="${RPT_DIR}report.html"                  # Report HTML File ...
+REPORT_TMP="${RPT_DIR}report.json"              # Report JSON Containing each Connection Results ...
+if [[ -e "${REPORT}.json" ]]                    # Delete previous Report JSON File ...
+then
+   rm "${REPORT}.json"
+fi
+REPORT_TITLE="<span style=\"font-size:32px;padding-top:20px;color:#1AD6F5;\">Delphix Profiler Security Scan Results</span>"
+
+#
+# Report Logo ...
+#
+LOGO="images/delphix-logo-black_300w.png"       # Delphix Logo ...
+#LOGO="images/[your_logo_filename]\" height=\"125\""
+### Delphix Demos ### . ./logos.sh
+
+#########################################################
+##         No Changes Required Below This Line         ##
+#########################################################
+
+#########################################################
+## Begin Process ...
+
+if [[ "${DMURL}" != "" ]] && [[ "${DMUSER}" != "" ]] && [[ "${DMPASS}" != "" ]] 
+then
+
+#########################################################
+## Authentication ...
+
+STATUS=`curl -s -X POST --header "${CONTENT_TYPE}" --header "${HEADER_ACCEPT}" -d "{ \"username\": \"${DMUSER}\", \"password\": \"${DMPASS}\" }" "${DMURL}/login"`
+#echo ${STATUS} | jq "."
+#echo "${STATUS}"
+
+KEY=`echo "${STATUS}" | jq --raw-output '.Authorization'`
+#echo "Authentication Key: ${KEY}"
+
+else
+   echo "Error: Missing Connection Parameters ... $CONFIG ... $CONFIG_FILE ... $DMURL .. $DMUSER ... $DMPASS"
+fi
+
+#######################################################################
+#
+# Get Application ...
+#
+STATUS=`curl -s -X GET --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/applications"`
+#echo "${STATUS}"
+
+#
+# Create Application ...
+#
+APPNAME=`echo "${STATUS}" | jq --raw-output ".responseList[] | select (.applicationName == \"${APP}\") | .applicationName"`
+if [[ "${APP}" != "${APPNAME}" ]]
+then
+   STATUS=`curl -s -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' --header "Authorization: ${KEY}" -d "{ \"applicationName\": \"${APP}\" }" "${DMURL}/applications"`
+   #echo "${STATUS}" | jq "."
+fi
+#echo "Application Name: ${APP}"
+JSON="{ ";
+JSON="${JSON} \"application_name\": \"${APP}\","
+
+#######################################################################
+#
+# Get Environment ...
+#
+STATUS=`curl -s -X GET --header 'Accept: application/json' --header "Authorization: ${KEY}" "${DMURL}/environments"`
+#echo "${STATUS}" | jq "."
+
+#
+# Create Environment ...
+#
+ENVID=`echo "${STATUS}" | jq --raw-output ".responseList[] | select (.application == \"${APP}\" and .environmentName == \"${ENV}\") | .environmentId"`
+if [[ "${ENVID}" == "" ]]
+then
+   STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"environmentName\": \"${ENV}\", \"application\": \"${APP}\", \"purpose\": \"MASK\" }" "${DMURL}/environments"`
+   #echo "${STATUS}" | jq "."
+   ENVID=`echo "${STATUS}" | jq --raw-output ". | select (.application == \"${APP}\" and .environmentName == \"${ENV}\") | .environmentId"`
+fi
+#echo "Environment Name: ${ENV}"
+#echo "Environment Id: ${ENVID}"
+JSON="${JSON} \"environment_name\": \"${ENV}\","
+JSON="${JSON} \"environment_id_\": \"${ENVID}\","
+
+let j=1
+
+   CONN0=`echo "${CONN}" | jq --raw-output ".[] | select (.connNo == ${j})"`
+
+   #######################################################################
+   #
+   # Process Provided Connectors ...
+   #
+   CNAME="${CONNNAME}${j}"
+
+   USR=`echo "${CONN0}" | jq --raw-output ".username"`
+   USR=$(echo "${USR}" | tr '[:lower:]' '[:upper:]')
+
+   PWD=`echo "${CONN0}" | jq --raw-output ".password"`
+   DBT=`echo "${CONN0}" | jq --raw-output ".databaseType"`
+
+   ZTMP=`echo "${CONN0}" | jq --raw-output ".host | select (.!=null)"`
+   if [[ "${ZTMP}" != "" ]]
+   then
+      HOST=`echo "${CONN0}" | jq --raw-output ".host"`
+   else
+      HOST=""
+   fi
+   #echo "HOST: |${HOST}|"
+
+   PORT=`echo "${CONN0}" | jq --raw-output ".port"`
+   SCHEMA=`echo "${CONN0}" | jq --raw-output ".schemaName"`
+
+   SID=`echo "${CONN0}" | jq --raw-output ".sid"`
+
+   JDBC=`echo "${CONN0}" | jq --raw-output ".jdbc"`
+
+   DBNAME=`echo "${CONN0}" | jq --raw-output ".databaseName"`
+   INSTANCE=`echo "${CONN0}" | jq --raw-output ".instanceName"`
+
+   #
+   # Check for Provided Profile Set Name within Connection ...
+   #
+   PSTMP=`echo "${CONN0}" | jq --raw-output ".profileSetName | select (.!=null)"`
+   if [[ "${PSTMP}" != "" ]]
+   then
+      PSNAME="${PSTMP}"
+   fi
+
+   CONN_STR=""                          # For Reporting Purposes ONLY ...
+
+   #
+   # Supported Databases ...
+   #
+   if [[ "${DBT}" == "ORACLE" ]]
+   then
+
+      #######################################################################
+      #
+      # Create Oracle Connector ...
+      #
+#### echo "{ \"connectorName\": \"${CNAME}\", \"databaseType\": \"${DBT}\", \"environmentId\": ${ENVID}, \"host\": \"${HOST}\", \"password\": \"${PWD}\", \"port\": ${PORT}, \"sid\": \"${SID}\", \"username\": \"${USR}\", \"schemaName\" : \"${SCHEMA}\" }"
+
+      STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"connectorName\": \"${CNAME}\", \"databaseType\": \"${DBT}\", \"environmentId\": ${ENVID}, \"host\": \"${HOST}\", \"password\": \"${PWD}\", \"port\": ${PORT}, \"sid\": \"${SID}\", \"username\": \"${USR}\", \"schemaName\" : \"${SCHEMA}\" }" "${DMURL}/database-connectors"`
+      #echo ${STATUS} | jq "."
+      DBID=`echo "${STATUS}" | jq --raw-output '.databaseConnectorId'`
+      CONN_STR="${DBT} ${HOST}:${PORT}:${SID}"
+
+   elif [[ "${DBT}" == "MSSQL" ]] && [[ "${HOST}" == "" ]]
+   then
+      #######################################################################
+      #
+      # MSSQL Advance Connector ...
+      #
+      #echo "JSON: { \"connectorName\": \"${CNAME}\", \"databaseType\": \"${DBT}\", \"environmentId\": ${ENVID}, \"jdbc\": \"${JDBC}\", \"password\": \"${PWD}\", \"username\": \"${USR}\", \"schemaName\" : \"${SCHEMA}\" }"
+
+      STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"connectorName\": \"${CNAME}\", \"databaseType\": \"${DBT}\", \"environmentId\": ${ENVID}, \"jdbc\": \"${JDBC}\", \"password\": \"${PWD}\", \"username\": \"${USR}\", \"schemaName\" : \"${SCHEMA}\" }" "${DMURL}/database-connectors"`
+
+      #echo ${STATUS} | jq "."
+      DBID=`echo "${STATUS}" | jq --raw-output '.databaseConnectorId'`
+      CONN_STR="Advance: ${DBT} ${JDBC} ...  Database: ${DBNAME} ... Instance: ${INSTANCE} "
+
+   elif [[ "${DBT}" == "MSSQL" ]]
+   then
+      #######################################################################
+      #
+      # MSSQL Connector ...
+      #
+      STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"connectorName\": \"${CNAME}\", \"databaseType\": \"${DBT}\", \"environmentId\": ${ENVID}, \"host\": \"${HOST}\", \"password\": \"${PWD}\", \"port\": ${PORT}, \"databaseName\": \"${DBNAME}\",\"instanceName\": \"${INSTANCE}\", \"username\": \"${USR}\", \"schemaName\" : \"${SCHEMA}\" }" "${DMURL}/database-connectors"`
+      #echo ${STATUS} | jq "."
+      DBID=`echo "${STATUS}" | jq --raw-output '.databaseConnectorId'`
+      CONN_STR="${DBT} ${HOST}:${PORT}:${DBNAME} ... Instance: ${INSTANCE} "
+
+   else
+
+      #
+      # Not Supported Yet ...
+      #
+      echo "Error: Database ${DBT} Not Yet supported in this script ..."
+   fi
+   #echo "DEBUG: ${CONN_STR} "
+   #echo "Connector Id: ${DBID}"
+   JSON="${JSON} \"connector_id\": \"${DBID}\","
+
+   #######################################################################
+   #
+   # Test Connector ...
+   #
+   STATUS=`curl -s -X POST --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/database-connectors/${DBID}/test"`
+   CONN_RESULTS=`echo "${STATUS}" | jq --raw-output ".response"`
+   if [[ "${CONN_RESULTS}" != "Connection Succeeded" ]]
+   then
+      echo "Error: Connection ${CNAME} not valid for ${DBID} ... ${CONN_RESULTS}"
+      echo "Please verify parameters and try again."
+
+      #
+      # Append Message to Report JSON file ...
+      #
+      ###echo "{ \"job\": ${j}, \"Run\": \"<tr><td>${j}</td>\", \"JobName\": \"<td>${CONN_STR} ... Schema: ${SCHEMA} ... Profile Set: ${PSNAME}</td>\", \"Results\": \"<td>Error: Connection ${CNAME} not valid ... ${CONN_RESULTS}</td></tr>\" }," >> ${REPORT}.json
+
+   else
+
+      #
+      # Have a valid database connect, let's proceed ...
+      #
+      #echo "${USR} ${CONN_RESULTS}"
+      JSON="${JSON} \"connection_results\": \"${CONN_RESULTS}\","
+
+      #######################################################################
+      #
+      # Get list of tables from connector ...
+      #
+      STATUS=`curl -s -X GET --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/database-connectors/${DBID}/fetch"`
+      #echo ${STATUS} | jq "."
+      TABLES=`echo "${STATUS}" | jq --raw-output ".[]"`
+      #echo "Tables: ${TABLES}"
+
+      #
+      # Proceed iff schema contains or username has privileges to see  tables ...
+      #
+      if [[ "${TABLES}" != "" ]]
+      then
+
+         #######################################################################
+         #
+         # Define Rule Set ...
+         #
+         STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"rulesetName\": \"${RSNAME}${j}\", \"databaseConnectorId\": ${DBID} }" "${DMURL}/database-rulesets"`
+         #echo ${STATUS} | jq "."
+         RSID=`echo "${STATUS}" | jq --raw-output ".databaseRulesetId"`
+         #echo "Rule Set Id: ${RSID}"
+         JSON="${JSON} \"ruleset_id\": \"${RSID}\","
+
+         #
+         # Loop thru Tables and add to Rule Set ...
+         #
+         while read tbname
+         do
+            #echo "... $tbname "
+
+            OLD_IFS="$IFS"
+            IFS=,
+            arr=($TBL)
+            for tbinfo in "${arr[@]}"
+            do
+               if [[ "${tbinfo}" == "${tbname}" ]] 
+               then
+                  #echo "Table Found: $tbname "
+                  STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"tableName\": \"${tbname}\", \"rulesetId\": ${RSID} }" "${DMURL}/table-metadata"`
+                  #echo ${STATUS} | jq "."
+               fi
+            done
+            IFS="${OLD_IFS}"
+
+         done <<< "${TABLES}"
+
+         JSON="${JSON} \"tables_str\": \"${TBL}\","
+
+         #######################################################################
+         #
+         # Get list of Profile Sets ...
+         #
+         STATUS=`curl -s -X GET --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/profile-sets"`
+         #echo ${STATUS} | jq "."
+         #echo "${STATUS}" | jq --raw-output ".responseList[] | .profileSetName + \",\" + (.profileSetId|tostring) "
+         PSID=`echo "${STATUS}" | jq --raw-output ".responseList[] | select (.profileSetName == \"${PSNAME}\") | (.profileSetId|tostring)"`
+         ##echo "Profile Set: ${PSNAME} ... ${PSID} "
+         JSON="${JSON} \"profileset_id\": \"${PSID}\","
+
+         #######################################################################
+         #
+         # Profile Job ...
+         # Create Profile Job ...
+         #
+         PROFILENAME="profile_job"${j}
+         STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"jobName\": \"${PROFILENAME}\", \"profileSetId\": ${PSID}, \"rulesetId\": ${RSID}, \"jobDescription\": \"This is an example ...\" }" "${DMURL}/profile-jobs"`
+         #echo ${STATUS} | jq "."
+
+         JOBID=`echo "${STATUS}" | jq --raw-output ".profileJobId"`
+         #echo "Job Id: ${JOBID}"
+         JSON="${JSON} \"profile_job_id\": \"${JOBID}\","
+
+         #######################################################################
+         #
+         # Execute Job ...
+         #
+         STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"jobId\": ${JOBID} }" "${DMURL}/executions"`
+         #echo ${STATUS} | jq "."
+         EXID=`echo "${STATUS}" | jq --raw-output ".executionId"`
+         #echo "Execution Id: ${EXID}"
+         JSON="${JSON} \"profile_execution_id\": \"${EXID}\","
+
+         JOBSTATUS=`echo "${STATUS}" | jq --raw-output ".status"`
+
+         sleep 1
+
+         while [[ "${JOBSTATUS}" == "RUNNING" ]]
+         do
+            sleep ${DELAYTIMESEC}     # for long running jobs ..
+            STATUS=`curl -s -X GET --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/executions/${EXID}"`
+            #echo ${STATUS} | jq "."
+            JOBSTATUS=`echo "${STATUS}" | jq --raw-output ".status"`
+            #echo "${JOBSTATUS}"
+         done
+
+#         if [[ "${JOBSTATUS}" != "SUCCEEDED" ]]
+#         then
+#            echo "Job Error: $JOBSTATUS ... $STATUS"
+#         else
+#            echo "Profile Job Completed: $JOBSTATUS"
+#         fi
+     
+         JSON="${JSON} \"profile_execution_results\": \"${STATUS}\","
+
+
+         #######################################################################
+         #
+         # Get Inventory ...
+         #
+         STATUS=`curl -s -X GET --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/table-metadata?ruleset_id=${RSID}"`
+         #echo ${STATUS} | jq "."
+
+         TABLEINFO=`echo "${STATUS}" | jq --raw-output '.responseList[] | .tableName + "," + (.tableMetadataId|tostring)'`
+         ##echo "Table Info: ${TABLEINFO}"
+         echo "${TABLEINFO}" > "inventory_job.out${j}"
+
+         #######################################################################
+         #
+         # Masking Job ...
+         #
+         MASKINGNAME="masking_job"${j}
+#{
+#  "jobName": "some_masking_job",
+#  "rulesetId": 7,
+#  "jobDescription": "This example illustrates a MaskingJob with just a handful of the possible fields set. It is meant to exemplify a simple JSON body that can be passed to the endpoint to create a MaskingJob.",
+#  "feedbackSize": 100000,
+#  "onTheFlyMasking": false,
+#  "databaseMaskingOptions": {
+#    "batchUpdate": true,
+#    "commitSize": 20000,
+#    "dropConstraints": true,
+#    "prescript": {
+#      "name": "my_prescript.sql",
+#      "contents": "ALTER TABLE table_name DROP COLUMN column_name;"
+#    },
+#    "postscript": {
+#      "name": "my_postscript.sql",
+#      "contents": "ALTER TABLE table_name ADD column_name VARCHAR(255);"
+#    }
+#  }
+#}
+
+         STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"jobName\": \"${MASKINGNAME}\", \"rulesetId\": ${RSID}, \"jobDescription\": \"This is an example ...\", \"onTheFlyMasking\": false }" "${DMURL}/masking-jobs"`
+         #echo ${STATUS} | jq "."
+
+         JOBID=`echo "${STATUS}" | jq --raw-output ".maskingJobId"`
+         #echo "Job Id: ${JOBID}"
+
+         JSON="${JSON} \"masking_job_id\": \"${JOB_ID}\","
+
+         #######################################################################
+         #
+         # Execute Job ...
+         #
+         STATUS=`curl -s -X POST --header "Content-Type: application/json" --header "Accept: application/json" --header "Authorization: ${KEY}" -d "{ \"jobId\": ${JOBID} }" "${DMURL}/executions"`
+         #echo ${STATUS} | jq "."
+         EXID=`echo "${STATUS}" | jq --raw-output ".executionId"`
+         #echo "Execution Id: ${EXID}"
+
+         JSON="${JSON} \"masking_execution_id\": \"${EXID}\","
+
+         JOBSTATUS=`echo "${STATUS}" | jq --raw-output ".status"`
+
+         sleep 1
+
+         while [[ "${JOBSTATUS}" == "RUNNING" ]]
+         do
+            sleep ${DELAYTIMESEC}     # for long running jobs ..
+            STATUS=`curl -s -X GET --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/executions/${EXID}"`
+            #echo ${STATUS} | jq "."
+            JOBSTATUS=`echo "${STATUS}" | jq --raw-output ".status"`
+            #echo "${JOBSTATUS}"
+         done
+
+#         if [[ "${JOBSTATUS}" != "SUCCEEDED" ]]
+#         then
+#            echo "Job Error: $JOBSTATUS ... $STATUS"
+#         else
+#            echo "Masking Job Completed: $JOBSTATUS"
+#         fi
+
+         JSON="${JSON} \"maskingjob_results\": \"${STATUS}\","
+
+         #
+         # Inventory Report ...
+         #
+
+         #######################################################################
+         #
+         # Write Out JSON Results Data ...
+         #
+         let k=0
+         echo "{ " > ${JSON_OUT}${j}
+         echo "  \"schema\": \"${SCHEMA}\" " >> ${JSON_OUT}${j}
+         echo ", \"host\": \"${HOST}\" " >> ${JSON_OUT}${j}
+         echo ", \"port\": \"${PORT}\" " >> ${JSON_OUT}${j}
+         echo ", \"sid\": \"${SID}\" " >> ${JSON_OUT}${j}
+         echo ", \"databaseName\": \"${DBNAME}\" " >> ${JSON_OUT}${j}
+         echo ", \"instanceName\": \"${INSTANCE}\" " >> ${JSON_OUT}${j}
+         echo ", \"jdbc\": \"${JDBC}\" " >> ${JSON_OUT}${j}
+         echo ", \"databaseType\": \"${DBT}\" " >> ${JSON_OUT}${j}
+         echo ", \"profileSet\": \"${PSNAME}\" " >> ${JSON_OUT}${j}
+         echo ", \"tables\": [" >> ${JSON_OUT}${j}
+         DELIM=""
+         OLD_IFS="$IFS"
+         while read tbinfo
+         do
+            let k=k+1
+            #echo "$k ... $tbinfo"
+            IFS=,
+            arr=($tbinfo)
+            #echo "---------------------------------------- "
+            #echo "Writing Results for Table: ${arr[0]}    id: ${arr[1]}"
+            ID="${arr[1]}"
+            #echo "Id: |${ID}|"
+            STATUS=`curl -s -X GET --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/column-metadata?table_metadata_id=${ID}"`
+            #echo "${STATUS}" | jq "."
+
+            if [[ "${DELIM}" != "" ]]
+            then
+               echo "${DELIM}" >> ${JSON_OUT}${j}
+            fi
+            echo " {" >> ${JSON_OUT}${j}
+            echo "  \"tableName\": \"${arr[0]}\"" >> ${JSON_OUT}${j}
+            echo "  , \"tableId\": \"${arr[1]}\"" >> ${JSON_OUT}${j}
+            echo "  , \"results\": " >> ${JSON_OUT}${j}
+            echo "${STATUS}" | jq "." >> ${JSON_OUT}${j}
+            echo " }" >> ${JSON_OUT}${j}
+            DELIM=","
+         done <<< "${TABLEINFO}"
+         IFS="${OLD_IFS}"
+
+         echo "]" >> ${JSON_OUT}${j}
+         echo ", \"rows\": $k " >> ${JSON_OUT}${j}
+         echo "}" >> ${JSON_OUT}${j}
+
+         #######################################################################
+         #
+         # Build Individual HTML Report Pages ...
+         #
+#         source report.sh "${RPT_DIR}${RPT}${j}" "${j}"
+
+
+
+      else
+
+#         echo "No Tables in this Schema ..."
+         TABLEINFO=""
+
+      fi      #  end if $TABLES == ""
+
+      #######################################################################
+      #
+      # Write Out JSON Results Data ...
+      #
+      let k=0
+
+
+
+         #
+         # Connector ...
+         #
+         STATUS=`curl -s -X DELETE --header "Accept: application/json" --header "Authorization: ${KEY}" "${DMURL}/database-connectors/${DBID}"`
+         echo ${STATUS} | jq "."
+
+
+   fi     # end of CONN_RESULTS ...
+
+#
+# Exit 
+#
+exit 0;
+
