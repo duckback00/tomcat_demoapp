@@ -23,7 +23,7 @@ out.println("password: "+password+"<br />");
       //
 
       //hard-coded-test//
-      //MongoClientURI connectionString  = new MongoClientURI("mongodb://delphix:delphix@172.16.160.133:27017/********");
+      //MongoClientURI connectionString  = new MongoClientURI("mongodb://delphix:********@172.16.160.133:27017/********");
 
       String URL = connUrl;
       MongoClientURI connectionString = new MongoClientURI(URL);
